@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+{ set +x; } 2>/dev/null
+
+usage() {
+    cat <<EOF 1>&2
+usage: $(basename $0) tag path ...
+EOF
+    [[ $1 == "-h" ]] || [[ $1 == "--help" ]]; exit
+}
+
+[[ $1 == "-h" ]] || [[ $1 == "--help" ]] && usage "$@"
+
+IFS=$'\n';
+tag="$1"; shift
+tagged="$(mdfind "kMDItemUserTags == $tag")" || exit
+new="$(echo "$repos" | grep -v "$tagged")"
+repos="$(IFS=$'\n';echo "$*")"
+
+outdated="$(echo "$tagged" | grep -v "$repos")"
+[[ -n "$new" ]] && { IFS=$'\n';set $new; tag -a "$tag" "$@"; }
+[[ -n "$outdated" ]] && { IFS=$'\n';set $outdated; tag -r "$tag" "$@"; };:
