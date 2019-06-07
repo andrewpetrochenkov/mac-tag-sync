@@ -10,12 +10,23 @@ EOF
 
 [[ $1 == "-h" ]] || [[ $1 == "--help" ]] && usage "$@"
 
-IFS=$'\n';
-tag="$1"; shift
-tagged="$(mdfind "kMDItemUserTags == $tag")" || exit
-new="$(echo "$repos" | grep -v "$tagged")"
-repos="$(IFS=$'\n';echo "$*")"
+[[ $# == 0 ]] && usage
+[[ -z "$1" ]] && usage
 
-outdated="$(echo "$tagged" | grep -v "$repos")"
-[[ -n "$new" ]] && { IFS=$'\n';set $new; tag -a "$tag" "$@"; }
-[[ -n "$outdated" ]] && { IFS=$'\n';set $outdated; tag -r "$tag" "$@"; };:
+which -s tag || {
+    echo "ERROR: tag not installed. run:
+brew install tag" && exit 1
+}
+
+IFS=$'\n'
+tag="$1"; shift
+tagged="$(mktemp)" || exit
+args="$(mktemp)" || exit
+mdfind "kMDItemUserTags == $tag" > "$tagged" || exit
+( IFS=$'\n'; echo "$*" > "$args" ) || exit
+
+new="$(awk 'FNR==NR{array[$0];next}{if ($0 in array) next;print $0}' "$tagged" "$args")" || exit
+outdated="$(awk 'FNR==NR{array[$0];next}{if ($0 in array) next;print $0}' "$args" "$tagged")" || exit
+
+[[ -n "$new" ]] && { ( IFS=$'\n';set $new; tag -a "$tag" "$@" ) || exit; }
+[[ -n "$outdated" ]] && ( IFS=$'\n';set $outdated; tag -r "$tag" "$@" );:

@@ -1,6 +1,6 @@
 {
   "name": "mac-tag-sync",
-  "version": "2019.4.13",
+  "version": "2019.6.7",
   "description": "create mac app from a shell script",
   "keywords": [
     "mac",
